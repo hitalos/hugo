@@ -1,13 +1,12 @@
-FROM golang as builder
+FROM golang:1.13-alpine as builder
 LABEL maintainer="hitalos <hitalos@gmail.com>"
 
-RUN go get github.com/magefile/mage
-RUN go get -d github.com/gohugoio/hugo
-WORKDIR /go/src/github.com/gohugoio/hugo
+RUN apk -U add g++ gcc git libc-dev
+WORKDIR /go/src
+RUN git clone https://github.com/gohugoio/hugo.git
+WORKDIR /go/src/hugo
 RUN git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
-ENV CGO_ENABLED 0
-RUN mage vendor && mage install
-RUN apt-get update && apt-get install -q -y upx && upx /go/bin/hugo
+RUN CGO_ENABLED=0 go install
 
 FROM scratch
 COPY --from=builder /go/bin/hugo /
